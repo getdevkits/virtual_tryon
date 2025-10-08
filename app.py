@@ -3,129 +3,64 @@ import requests
 from PIL import Image
 import io
 
-# -------------------- CONFIG --------------------
-st.set_page_config(
-    page_title="Virtual Try-On Diffusion (VTON-D)",
-    page_icon="👗",
-    layout="centered"
-)
+st.set_page_config(page_title="Virtual Try-On Diffusion", page_icon="🪞", layout="centered")
 
-# -------------------- STYLES --------------------
-st.markdown("""
-    <style>
-    body {
-        background-color: #f8f9fa;
-        font-family: 'Segoe UI', sans-serif;
-    }
-    .main-title {
-        text-align: center;
-        font-size: 2.2rem;
-        font-weight: bold;
-        color: #2E4053;
-        margin-bottom: 0.5rem;
-    }
-    .sub-title {
-        text-align: center;
-        font-size: 1rem;
-        color: #5D6D7E;
-        margin-bottom: 2rem;
-    }
-    .upload-box {
-        background-color: white;
-        padding: 1.5rem;
-        border-radius: 15px;
-        box-shadow: 0 0 10px rgba(0,0,0,0.05);
-        margin-bottom: 1.5rem;
-    }
-    .stButton button {
-        background: linear-gradient(to right, #7b2ff7, #f107a3);
-        color: white;
-        border: none;
-        border-radius: 10px;
-        font-size: 1.1rem;
-        padding: 0.6rem 1.2rem;
-        transition: 0.3s;
-    }
-    .stButton button:hover {
-        transform: scale(1.05);
-        background: linear-gradient(to right, #f107a3, #7b2ff7);
-    }
-    </style>
-""", unsafe_allow_html=True)
+st.title("👗 Virtual Try-On Diffusion (VTON-D)")
+st.caption("AI-powered virtual clothing try-on using Hugging Face (via RapidAPI)")
 
-# -------------------- HEADER --------------------
-st.markdown("<div class='main-title'>👗 Virtual Try-On Diffusion (VTON-D)</div>", unsafe_allow_html=True)
-st.markdown("<div class='sub-title'>AI-powered clothing try-on using diffusion models (via RapidAPI)</div>", unsafe_allow_html=True)
+# Sidebar info
+st.sidebar.header("About")
+st.sidebar.write("Upload a person image and a clothing image. Then generate a virtual try-on preview.")
+st.sidebar.write("Free plan: 100 API requests/month via RapidAPI.")
 
-# -------------------- SIDEBAR --------------------
-st.sidebar.title("About the App")
-st.sidebar.info(
-    """
-    This app uses the **Virtual Try-On Diffusion (VTON-D)** model from Hugging Face,
-    accessed via **RapidAPI**.  
-    Upload a **person image** and a **clothing image**, then click **Generate Try-On**.
-    """
-)
-st.sidebar.markdown("**API Plan:** Free (100 requests/month) via RapidAPI")
-
-# -------------------- UPLOAD SECTION --------------------
-st.markdown("<div class='upload-box'>", unsafe_allow_html=True)
-st.subheader("1️⃣ Upload Input Images")
-
+# Upload columns
 col1, col2 = st.columns(2)
 with col1:
-    person_img = st.file_uploader("Person Image", type=["jpg", "jpeg", "png"])
-    if person_img:
-        person_bytes = person_img.read()
-        person_preview = Image.open(io.BytesIO(person_bytes))
-        st.image(person_preview, caption="Person Image", use_container_width=True)
+    person_img = st.file_uploader("Upload Person Image", type=["jpg", "jpeg", "png"])
+    if person_img is not None:
+        try:
+            person_preview = Image.open(io.BytesIO(person_img.getvalue())).convert("RGB")
+            st.image(person_preview, caption="Person", use_container_width=True)
+        except Exception:
+            st.warning("Couldn't preview this image, please upload a valid JPG/PNG.")
 
 with col2:
-    cloth_img = st.file_uploader("Clothing Image", type=["jpg", "jpeg", "png"])
-    if cloth_img:
-        cloth_bytes = cloth_img.read()
-        cloth_preview = Image.open(io.BytesIO(cloth_bytes))
-        st.image(cloth_preview, caption="Clothing Image", use_container_width=True)
-st.markdown("</div>", unsafe_allow_html=True)
+    cloth_img = st.file_uploader("Upload Clothing Image", type=["jpg", "jpeg", "png"])
+    if cloth_img is not None:
+        try:
+            cloth_preview = Image.open(io.BytesIO(cloth_img.getvalue())).convert("RGB")
+            st.image(cloth_preview, caption="Clothing", use_container_width=True)
+        except Exception:
+            st.warning("Couldn't preview this image, please upload a valid JPG/PNG.")
 
-# -------------------- API INFO --------------------
-st.markdown("<div class='upload-box'>", unsafe_allow_html=True)
-st.subheader("2️⃣ API Configuration")
-st.write("Using dummy API key placeholder — replace it with your own RapidAPI key if needed.")
+st.markdown("---")
+
 api_key = "2010bd9dd3mshe6feef1665eab1dp175d30jsn16f04b5bb10b"
-st.markdown("</div>", unsafe_allow_html=True)
 
-# -------------------- ACTION BUTTON --------------------
 if st.button("🚀 Generate Try-On"):
-    if not (person_img and cloth_img):
-        st.error("⚠️ Please upload both images before generating.")
+    if not person_img or not cloth_img:
+        st.error("Please upload both person and clothing images.")
     else:
         with st.spinner("Generating your virtual try-on... please wait ⏳"):
-            url = "https://virtual-try-on-diffusion-vton-d.p.rapidapi.com/tryon"
-            files = {
-                "person": person_bytes,
-                "cloth": cloth_bytes,
-            }
-            headers = {
-                "X-RapidAPI-Key": api_key,
-                "X-RapidAPI-Host": "virtual-try-on-diffusion-vton-d.p.rapidapi.com",
-            }
             try:
-                response = requests.post(url, headers=headers, files=files)
-                if response.status_code == 200:
-                    result_img = Image.open(io.BytesIO(response.content))
-                    st.success("✅ Virtual Try-On generated successfully!")
-                    st.image(result_img, caption="AI Try-On Result", use_container_width=True)
+                url = "https://virtual-try-on-diffusion-vton-d.p.rapidapi.com/tryon"
+                headers = {
+                    "X-RapidAPI-Key": api_key,
+                    "X-RapidAPI-Host": "virtual-try-on-diffusion-vton-d.p.rapidapi.com"
+                }
+                files = {
+                    "person": ("person.jpg", person_img.getvalue(), "image/jpeg"),
+                    "cloth": ("cloth.jpg", cloth_img.getvalue(), "image/jpeg")
+                }
+                resp = requests.post(url, headers=headers, files=files)
+                if resp.status_code == 200:
+                    tryon_img = Image.open(io.BytesIO(resp.content))
+                    st.success("✅ Virtual Try-On Generated Successfully!")
+                    st.image(tryon_img, caption="AI Try-On Result", use_container_width=True)
                 else:
-                    st.error(f"❌ API request failed ({response.status_code}) — {response.text}")
+                    st.error(f"❌ API returned {resp.status_code}: {resp.text}")
             except Exception as e:
-                st.error(f"Error contacting API: {e}")
+                st.error(f"Error: {e}")
 
-# -------------------- FOOTER --------------------
 st.markdown("---")
-st.markdown(
-    "<div style='text-align:center; color:gray; font-size:0.9rem;'>"
-    "Powered by <b>Virtual Try-On Diffusion (VTON-D)</b> • Hugging Face x RapidAPI"
-    "</div>",
-    unsafe_allow_html=True
-)
+st.caption("Powered by Virtual Try-On Diffusion • Hugging Face x RapidAPI")
