@@ -76,13 +76,15 @@ col1, col2 = st.columns(2)
 with col1:
     person_img = st.file_uploader("Person Image", type=["jpg", "jpeg", "png"])
     if person_img:
-        person_preview = Image.open(person_img)
+        person_bytes = person_img.read()
+        person_preview = Image.open(io.BytesIO(person_bytes))
         st.image(person_preview, caption="Person Image", use_container_width=True)
 
 with col2:
     cloth_img = st.file_uploader("Clothing Image", type=["jpg", "jpeg", "png"])
     if cloth_img:
-        cloth_preview = Image.open(cloth_img)
+        cloth_bytes = cloth_img.read()
+        cloth_preview = Image.open(io.BytesIO(cloth_bytes))
         st.image(cloth_preview, caption="Clothing Image", use_container_width=True)
 st.markdown("</div>", unsafe_allow_html=True)
 
@@ -101,8 +103,8 @@ if st.button("🚀 Generate Try-On"):
         with st.spinner("Generating your virtual try-on... please wait ⏳"):
             url = "https://virtual-try-on-diffusion-vton-d.p.rapidapi.com/tryon"
             files = {
-                "person": person_img.getvalue(),
-                "cloth": cloth_img.getvalue(),
+                "person": person_bytes,
+                "cloth": cloth_bytes,
             }
             headers = {
                 "X-RapidAPI-Key": api_key,
