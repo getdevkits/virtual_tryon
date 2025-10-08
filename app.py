@@ -3,12 +3,14 @@ import requests
 from PIL import Image
 import io
 
+# -------------------- CONFIG --------------------
 st.set_page_config(
     page_title="Virtual Try-On Diffusion (VTON-D)",
     page_icon="👗",
     layout="centered"
 )
 
+# -------------------- STYLES --------------------
 st.markdown("""
     <style>
     body {
@@ -51,9 +53,11 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+# -------------------- HEADER --------------------
 st.markdown("<div class='main-title'>👗 Virtual Try-On Diffusion (VTON-D)</div>", unsafe_allow_html=True)
 st.markdown("<div class='sub-title'>AI-powered clothing try-on using diffusion models (via RapidAPI)</div>", unsafe_allow_html=True)
 
+# -------------------- SIDEBAR --------------------
 st.sidebar.title("About the App")
 st.sidebar.info(
     """
@@ -64,6 +68,7 @@ st.sidebar.info(
 )
 st.sidebar.markdown("**API Plan:** Free (100 requests/month) via RapidAPI")
 
+# -------------------- UPLOAD SECTION --------------------
 st.markdown("<div class='upload-box'>", unsafe_allow_html=True)
 st.subheader("1️⃣ Upload Input Images")
 
@@ -71,19 +76,24 @@ col1, col2 = st.columns(2)
 with col1:
     person_img = st.file_uploader("Person Image", type=["jpg", "jpeg", "png"])
     if person_img:
-        st.image(person_img, caption="Person Image", use_container_width=True)
+        person_preview = Image.open(person_img)
+        st.image(person_preview, caption="Person Image", use_container_width=True)
+
 with col2:
     cloth_img = st.file_uploader("Clothing Image", type=["jpg", "jpeg", "png"])
     if cloth_img:
-        st.image(cloth_img, caption="Clothing Image", use_container_width=True)
+        cloth_preview = Image.open(cloth_img)
+        st.image(cloth_preview, caption="Clothing Image", use_container_width=True)
 st.markdown("</div>", unsafe_allow_html=True)
 
+# -------------------- API INFO --------------------
 st.markdown("<div class='upload-box'>", unsafe_allow_html=True)
 st.subheader("2️⃣ API Configuration")
-st.write("Using API key placeholder `xxxxx` — replace with your own from RapidAPI.")
+st.write("Using dummy API key placeholder — replace it with your own RapidAPI key if needed.")
 api_key = "2010bd9dd3mshe6feef1665eab1dp175d30jsn16f04b5bb10b"
 st.markdown("</div>", unsafe_allow_html=True)
 
+# -------------------- ACTION BUTTON --------------------
 if st.button("🚀 Generate Try-On"):
     if not (person_img and cloth_img):
         st.error("⚠️ Please upload both images before generating.")
@@ -109,6 +119,7 @@ if st.button("🚀 Generate Try-On"):
             except Exception as e:
                 st.error(f"Error contacting API: {e}")
 
+# -------------------- FOOTER --------------------
 st.markdown("---")
 st.markdown(
     "<div style='text-align:center; color:gray; font-size:0.9rem;'>"
