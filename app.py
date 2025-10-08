@@ -81,7 +81,7 @@ st.markdown("</div>", unsafe_allow_html=True)
 st.markdown("<div class='upload-box'>", unsafe_allow_html=True)
 st.subheader("2️⃣ API Configuration")
 st.write("Using API key placeholder `xxxxx` — replace with your own from RapidAPI.")
-api_key = "xxxxx"
+api_key = "2010bd9dd3mshe6feef1665eab1dp175d30jsn16f04b5bb10b"
 st.markdown("</div>", unsafe_allow_html=True)
 
 if st.button("🚀 Generate Try-On"):
