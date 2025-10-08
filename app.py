@@ -1,66 +1,75 @@
 import streamlit as st
-import requests
-from PIL import Image
+import http.client
 import io
+from PIL import Image
 
-st.set_page_config(page_title="Virtual Try-On Diffusion", page_icon="🪞", layout="centered")
+st.set_page_config(page_title="Try-On Diffusion", page_icon="🪞", layout="centered")
+st.title("👗 AI Virtual Try-On Diffusion")
+st.caption("Powered by RapidAPI — try-on-diffusion.p.rapidapi.com")
 
-st.title("👗 Virtual Try-On Diffusion (VTON-D)")
-st.caption("AI-powered virtual clothing try-on using Hugging Face (via RapidAPI)")
-
-# Sidebar info
-st.sidebar.header("About")
-st.sidebar.write("Upload a person image and a clothing image. Then generate a virtual try-on preview.")
-st.sidebar.write("Free plan: 100 API requests/month via RapidAPI.")
-
-# Upload columns
+# Upload Section
 col1, col2 = st.columns(2)
+
 with col1:
     person_img = st.file_uploader("Upload Person Image", type=["jpg", "jpeg", "png"])
-    if person_img is not None:
-        try:
-            person_preview = Image.open(io.BytesIO(person_img.getvalue())).convert("RGB")
-            st.image(person_preview, caption="Person", use_container_width=True)
-        except Exception:
-            st.warning("Couldn't preview this image, please upload a valid JPG/PNG.")
+    if person_img:
+        st.image(person_img, caption="Person Image", use_container_width=True)
 
 with col2:
     cloth_img = st.file_uploader("Upload Clothing Image", type=["jpg", "jpeg", "png"])
-    if cloth_img is not None:
-        try:
-            cloth_preview = Image.open(io.BytesIO(cloth_img.getvalue())).convert("RGB")
-            st.image(cloth_preview, caption="Clothing", use_container_width=True)
-        except Exception:
-            st.warning("Couldn't preview this image, please upload a valid JPG/PNG.")
+    if cloth_img:
+        st.image(cloth_img, caption="Clothing Image", use_container_width=True)
 
-st.markdown("---")
-
-api_key = "2010bd9dd3mshe6feef1665eab1dp175d30jsn16f04b5bb10b"
+api_key = "2010bd9dd3mshe6feef1665eab1dp175d30jsn16f04b5bb10b"  # dummy key placeholder
 
 if st.button("🚀 Generate Try-On"):
     if not person_img or not cloth_img:
-        st.error("Please upload both person and clothing images.")
+        st.error("Please upload both images.")
     else:
-        with st.spinner("Generating your virtual try-on... please wait ⏳"):
-            try:
-                url = "https://virtual-try-on-diffusion-vton-d.p.rapidapi.com/tryon"
-                headers = {
-                    "X-RapidAPI-Key": api_key,
-                    "X-RapidAPI-Host": "virtual-try-on-diffusion-vton-d.p.rapidapi.com"
-                }
-                files = {
-                    "person": ("person.jpg", person_img.getvalue(), "image/jpeg"),
-                    "cloth": ("cloth.jpg", cloth_img.getvalue(), "image/jpeg")
-                }
-                resp = requests.post(url, headers=headers, files=files)
-                if resp.status_code == 200:
-                    tryon_img = Image.open(io.BytesIO(resp.content))
-                    st.success("✅ Virtual Try-On Generated Successfully!")
-                    st.image(tryon_img, caption="AI Try-On Result", use_container_width=True)
-                else:
-                    st.error(f"❌ API returned {resp.status_code}: {resp.text}")
-            except Exception as e:
-                st.error(f"Error: {e}")
+        st.info("Sending request to Try-On Diffusion API...")
+        try:
+            # Prepare images as binary data
+            person_bytes = person_img.getvalue()
+            cloth_bytes = cloth_img.getvalue()
 
-st.markdown("---")
-st.caption("Powered by Virtual Try-On Diffusion • Hugging Face x RapidAPI")
+            # Initialize connection
+            conn = http.client.HTTPSConnection("try-on-diffusion.p.rapidapi.com")
+
+            # ⚠️ NOTE: This specific endpoint might require multipart/form-data payload.
+            # So we’ll manually build it.
+            boundary = "----WebKitFormBoundary7MA4YWxkTrZu0gW"
+            payload = (
+                f"--{boundary}\r\n"
+                f'Content-Disposition: form-data; name="person"; filename="person.jpg"\r\n'
+                f"Content-Type: image/jpeg\r\n\r\n"
+            ).encode() + person_bytes + (
+                f"\r\n--{boundary}\r\n"
+                f'Content-Disposition: form-data; name="cloth"; filename="cloth.jpg"\r\n'
+                f"Content-Type: image/jpeg\r\n\r\n"
+            ).encode() + cloth_bytes + f"\r\n--{boundary}--".encode()
+
+            headers = {
+                "x-rapidapi-key": api_key,
+                "x-rapidapi-host": "try-on-diffusion.p.rapidapi.com",
+                "content-type": f"multipart/form-data; boundary={boundary}",
+            }
+
+            conn.request("POST", "/try-on-file", body=payload, headers=headers)
+            res = conn.getresponse()
+            data = res.read()
+
+            if res.status == 200:
+                try:
+                    result_img = Image.open(io.BytesIO(data))
+                    st.success("✅ Virtual Try-On generated successfully!")
+                    st.image(result_img, caption="AI Try-On Result", use_container_width=True)
+                except Exception:
+                    st.write("Response:", data.decode("utf-8"))
+            else:
+                st.error(f"API Error: {res.status}")
+                st.text(data.decode("utf-8"))
+
+            conn.close()
+
+        except Exception as e:
+            st.error(f"Error contacting API: {e}")
